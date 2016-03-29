@@ -1,7 +1,10 @@
 /**
  * テーブルのデザインを変えるスクリプト。
  * 
- * @author:Nishisonic,Nekopanda
+ * @author Nishisonic
+ * @author Nekopanda
+ * @since 1.0.0
+ * @version 1.2.0
  */
 
 //script読み込み
