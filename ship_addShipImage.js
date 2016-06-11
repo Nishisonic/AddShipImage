@@ -1,4 +1,4 @@
-//ver1.3.0
+//ver1.4.0
 //Author: Nishisonic
 
 load("script/utils.js");
@@ -7,10 +7,11 @@ function header() {
 	return ["画像"];
 }
 
-function begin(specdiff) {}
+function begin(specdiff) {
+}
 
 function body(ship) {
-	return null;
+	return toComparable([null]);
 }
 
 function end() {}
