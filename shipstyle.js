@@ -1,11 +1,11 @@
-//ver1.4.0
+//ver1.4.1
 //Author: Nishisonic
 //        Nekopanda
 
 /*
  * 全画像データを1度だけ全読み込みしてScriptData内に保存
  * そこから毎回取り出すプログラム
- * 表示したデータは、次に表示する際にdispose()して消す
+ * 表示したデータは、次に表示する際にdispose()して消すか、そのまま表示する
  */
 
 load("script/utils.js");
@@ -26,11 +26,11 @@ GlobalContext = Java.type("logbook.data.context.GlobalContext");
 AppConstants = Java.type("logbook.constants.AppConstants");
 ReportUtils = Java.type("logbook.util.ReportUtils");
 
-System = Java.type("java.lang.System");
+//System = Java.type("java.lang.System");
 
 data_prefix = "shipImage_";
 
-var startTime;
+//var startTime;
 //var endTime;
 
 //画像処理に使う変数類
@@ -48,8 +48,7 @@ var picIndex = - 1;
 var columnIndex = - 1;
 
 function begin(header) {
-	print("start");
-	startTime = System.currentTimeMillis();
+	//startTime = System.currentTimeMillis();
 	if(getData("isLoaded") == null){
 		var lDir = new File(".\\script\\shipImage\\Layer");
 		var nDir = new File(".\\script\\shipImage\\Normal");
@@ -203,7 +202,7 @@ function end() {
 	setTmpData("imageDtoMap",imageDtoMap);
 	setTmpData("imageMap",imageMap);
 
-	print((System.currentTimeMillis() - startTime) + "ms");
+	//print((System.currentTimeMillis() - startTime) + "ms");
 }
 
 
