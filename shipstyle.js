@@ -1,4 +1,4 @@
-//ver1.4.1
+//ver1.4.2
 //Author: Nishisonic
 //        Nekopanda
 
@@ -151,7 +151,8 @@ function create(table, data, index) {
 		//前回読み込んだimage
 		var oldImage        = oldImageMap.get(ship.id.toString());
 		//前回読み込んだimageDtoと今回作ったimageDtoを比較
-		if(isEqual(oldImageDto,imageDto)){
+		//Ver1.4.2:廃棄されているかも確認する
+		if(isEqual(oldImageDto,imageDto) && !oldImage.isDisposed()){
 			//一緒だった場合は前に作ったimageを読み込む
 			//System.out.print(",flg:前回引継");
 			image = oldImage;
