@@ -1,4 +1,4 @@
-//ver1.4.2
+//ver1.4.3
 //Author: Nishisonic
 //        Nekopanda
 
@@ -50,9 +50,10 @@ var columnIndex = - 1;
 function begin(header) {
 	//startTime = System.currentTimeMillis();
 	if(getData("isLoaded") == null){
-		var lDir = new File(".\\script\\shipImage\\Layer");
-		var nDir = new File(".\\script\\shipImage\\Normal");
-		var dDir = new File(".\\script\\shipImage\\Damage");
+		var FS   = File.separator;
+		var lDir = new File("." + FS + "script" + FS + "shipImage" + FS + "Layer");
+		var nDir = new File("." + FS + "script" + FS + "shipImage" + FS + "Normal");
+		var dDir = new File("." + FS + "script" + FS + "shipImage" + FS + "Damage");
 		//レイヤー
 		for each(var file in lDir.listFiles(new ImageFilter())){
 			setTmpData("LAYER_" + file.getName(),getImage(file.toString()));
