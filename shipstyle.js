@@ -40,6 +40,7 @@ var oldImageMap    = null;
 var imageMap       = null;
 var WIDTH          = 80;
 var HEIGHT         = 20;
+var PREFIX         = "";
 
 var condIndex = 12;
 //画像
@@ -79,14 +80,6 @@ function begin(header) {
 			picIndex = i;
 		}
 	}
-	//前回保存したimageDtoのマップ
-	oldImageDtoMap  = getData("imageDtoMap");
-	//前回保存したimageのマップ
-	oldImageMap = getData("imageMap");
-	//今回生成するimageDtoのマップ
-	imageDtoMap    = new HashMap();
-	//今回生成するimageのマップ
-	imageMap       = new HashMap();
 }
 
 function getTableCondColor(cond) {
@@ -137,6 +130,18 @@ function create(table, data, index) {
 	 * 生成したImageをそのままにしていると、その内メモリ不足を引き起こして落ちるので、
 	 * どこかでdispose()してメモリを解放する必要がある
 	 */
+
+	if(index == 0){
+		PREFIX        = table.getShell().getText().substring(7,8);
+		//前回保存したimageDtoのマップ
+		oldImageDtoMap = getData("imageDtoMap_" + PREFIX);
+		//前回保存したimageのマップ
+		oldImageMap    = getData("imageMap_" + PREFIX);
+		//今回生成するimageDtoのマップ
+		imageDtoMap    = new HashMap();
+		//今回生成するimageのマップ
+		imageMap       = new HashMap();
+	}
 
 	//今回生成したimageDto
 	var imageDto        = getImageDto(ship);
@@ -201,8 +206,8 @@ function end() {
 		});
 	}
 	//保存
-	setTmpData("imageDtoMap",imageDtoMap);
-	setTmpData("imageMap",imageMap);
+	setTmpData("imageDtoMap_" + PREFIX, imageDtoMap);
+	setTmpData("imageMap_" + PREFIX, imageMap);
 
 	//print((System.currentTimeMillis() - startTime) + "ms");
 }
