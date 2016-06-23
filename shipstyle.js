@@ -1,4 +1,4 @@
-//ver1.4.3
+//ver1.4.5
 //Author: Nishisonic
 //        Nekopanda
 
@@ -21,10 +21,14 @@ Display = Java.type("org.eclipse.swt.widgets.Display");
 SWTResourceManager = Java.type("org.eclipse.wb.swt.SWTResourceManager");
 ImageData = Java.type("org.eclipse.swt.graphics.ImageData");
 HashMap = Java.type("java.util.HashMap");
+Arrays = Java.type("java.util.Arrays");
+Map = Java.type("java.util.Map");
+LinkedHashSet = Java.type("java.util.LinkedHashSet"); 
 
 GlobalContext = Java.type("logbook.data.context.GlobalContext");
 AppConstants = Java.type("logbook.constants.AppConstants");
 ReportUtils = Java.type("logbook.util.ReportUtils");
+ApplicationMain = Java.type("logbook.gui.ApplicationMain");
 
 //System = Java.type("java.lang.System");
 
@@ -41,6 +45,10 @@ var imageMap       = null;
 var WIDTH          = 80;
 var HEIGHT         = 20;
 var PREFIX         = "";
+var FS             = File.separator;
+var DIR            = "." + FS + "script" + FS + "shipImage" + FS;
+var tableImageDto  = null;
+var shipTable      = null;
 
 var condIndex = 12;
 //画像
@@ -50,23 +58,22 @@ var columnIndex = - 1;
 
 function begin(header) {
 	//startTime = System.currentTimeMillis();
-	if(getData("isLoaded") == null){
-		var FS   = File.separator;
-		var lDir = new File("." + FS + "script" + FS + "shipImage" + FS + "Layer");
-		var nDir = new File("." + FS + "script" + FS + "shipImage" + FS + "Normal");
-		var dDir = new File("." + FS + "script" + FS + "shipImage" + FS + "Damage");
+	if(!getData("isLoaded")){ //nullはfalse
+		var lDir = new File(DIR + "Layer");
+		var nDir = new File(DIR + "Normal");
+		var dDir = new File(DIR + "Damage");
 		//レイヤー
-		for each(var file in lDir.listFiles(new ImageFilter())){
+		Arrays.stream(lDir.listFiles(new ImageFilter())).forEach(function(file){
 			setTmpData("LAYER_" + file.getName(),getImage(file.toString()));
-		}
+		});
 		//通常
-		for each(var file in nDir.listFiles(new ImageFilter())){
+		Arrays.stream(nDir.listFiles(new ImageFilter())).forEach(function(file){
 			setTmpData("NORMAL_" + file.getName(),getImage(file.toString()));
-		}
+		});
 		//損傷
-		for each(var file in dDir.listFiles(new ImageFilter())){
+		Arrays.stream(dDir.listFiles(new ImageFilter())).forEach(function(file){
 			setTmpData("DAMAGE_" + file.getName(),getImage(file.toString()));
-		}
+		});
 		setTmpData("isLoaded",true);
 	}
 	missionShips = GlobalContext.getMissionShipSet();
@@ -132,11 +139,19 @@ function create(table, data, index) {
 	 */
 
 	if(index == 0){
-		PREFIX        = table.getShell().getText().substring(7,8);
+		//メモリをキー代わりにしてみる(GCされた場合、SWTExceptionが起きそう)
+		Arrays.stream(ApplicationMain.main.getShipTables()).filter(function(shiptable){
+			return shiptable.shell == table.shell;
+		}).forEach(function(shiptable){
+			shipTable = shiptable;
+		});
+		//前回保存したimageのマップのマップ
+		var storedTableImageDto = getData(shipTable);
+		tableImageDto = storedTableImageDto instanceof Map ? storedTableImageDto : new HashMap();
 		//前回保存したimageDtoのマップ
-		oldImageDtoMap = getData("imageDtoMap_" + PREFIX);
+		oldImageDtoMap = tableImageDto.containsKey("imageDtoMap") ? tableImageDto.get("imageDtoMap") : new HashMap();
 		//前回保存したimageのマップ
-		oldImageMap    = getData("imageMap_" + PREFIX);
+		oldImageMap    = tableImageDto.containsKey("imageMap") ? tableImageDto.get("imageMap") : new HashMap();
 		//今回生成するimageDtoのマップ
 		imageDtoMap    = new HashMap();
 		//今回生成するimageのマップ
@@ -147,11 +162,9 @@ function create(table, data, index) {
 	var imageDto        = getImageDto(ship);
 	//今回生成したimage(但しこの時点では作らない、作らない可能性があるので)
 	var image;
-
-	//System.out.print("id:" + ship.id + ",name:" + ship.name);
 	
-	//古いdtoMapが存在する&古いimageMapが存在する&古いdtoMapに艦娘のデータが存在する&古いimageMapに艦娘のデータが存在する場合のみ実行
-	if(oldImageDtoMap != null && oldImageMap != null && oldImageDtoMap.containsKey(ship.id.toString()) && oldImageMap.containsKey(ship.id.toString())){
+	//古いdtoMapに艦娘のデータが存在する&古いimageMapに艦娘のデータが存在する場合のみ実行
+	if(oldImageDtoMap.containsKey(ship.id.toString()) && oldImageMap.containsKey(ship.id.toString())){
 		//前回読み込んだimageDto
 		var oldImageDto     = oldImageDtoMap.get(ship.id.toString());
 		//前回読み込んだimage
@@ -160,24 +173,19 @@ function create(table, data, index) {
 		//Ver1.4.2:廃棄されているかも確認する
 		if(isEqual(oldImageDto,imageDto) && !oldImage.isDisposed()){
 			//一緒だった場合は前に作ったimageを読み込む
-			//System.out.print(",flg:前回引継");
 			image = oldImage;
 		} else {
-			//System.out.print(",flg:前回廃棄→新規作成");
 			//前の画像を廃棄
 			oldImage.dispose();
 			//再作成
-			image = resize(imageDto.imageArray, WIDTH, HEIGHT);
+			image = resize(imageDto.imageSet, WIDTH, HEIGHT);
 		}
 		//前のデータを削除
-		oldImageMap.remove(ship.id.toString()); //こっちを使う
-		//System.out.print(oldImageMap.remove(ship.id.toString()));
-		//oldImageDtoMap.remove(ship.id.toString()); たぶんGCされる
+		oldImageMap.remove(ship.id.toString());
+		oldImageDtoMap.remove(ship.id.toString());
 	} else {
-		//System.out.print(",flg:完全新規作成");
-		image = resize(imageDto.imageArray, WIDTH, HEIGHT);
+		image = resize(imageDto.imageSet, WIDTH, HEIGHT);
 	}
-	
 
 	//画像を貼り付ける
 	item.setImage(picIndex, image);
@@ -185,30 +193,21 @@ function create(table, data, index) {
 	//保存
 	imageDtoMap.put(ship.id.toString(), imageDto);
 	imageMap.put(ship.id.toString(), image);
-	
-	
-	//System.out.print(",oldImageDtoMap:" + oldImageDtoMap.size());
-	//System.out.print(",imageDtoMap:" + imageDtoMap.size());
-	//System.out.print(",oldImageMap:" + oldImageMap.size());
-	//System.out.print(",imageMap:" + imageMap.size());
-	//System.out.println(",image:" + image);
 
 	return item;
 }
 
 function end() {
 	//残った分を廃棄   (こうしないとメモリ不足になって落ちる)
-	if(oldImageMap != null){
-		//print(oldImageMap.size());
-		oldImageMap.forEach(function(key,image){
-			//print(key,image);
-			image.dispose();
-		});
-	}
+	oldImageMap.forEach(function(key,image){
+		image.dispose();
+	});
 	//保存
-	setTmpData("imageDtoMap_" + PREFIX, imageDtoMap);
-	setTmpData("imageMap_" + PREFIX, imageMap);
+	tableImageDto.put("imageDtoMap", imageDtoMap);
+	tableImageDto.put("imageMap", imageMap);
 
+	setTmpData(shipTable, tableImageDto);
+	
 	//print((System.currentTimeMillis() - startTime) + "ms");
 }
 
@@ -230,60 +229,60 @@ function getImageDto(ship){
 			return getData("DAMAGE_" + ship.shipId.toString() + ".jpg");
 		}
 	})(ship);
-	var imageArray = [];
+	var imageSet = new LinkedHashSet();
 	//撃沈
 	if(ship.isSunk()){
 		state = "Sunk";
 		_cond = "Normal";
 		wedding = "Normal";
-		imageArray.push(new Image(Display.getDefault(), shipImage, SWT.IMAGE_GRAY));
-		imageArray.push(getData("LAYER_Sunk.png"));
+		imageSet.add(new Image(Display.getDefault(), shipImage, SWT.IMAGE_GRAY));
+		imageSet.add(getData("LAYER_Sunk.png"));
 	} else {
-		imageArray.push(shipImage);
+		imageSet.add(shipImage);
 		//修復中
 		if(ndockShips.contains(ship.id)){
 			state = "Repair";
-			imageArray.push(getData("LAYER_Repair.png"));
+			imageSet.add(getData("LAYER_Repair.png"));
 		//遠征中
 		} else if(missionShips.contains(ship.id)){
 			state = "Mission";
-			imageArray.push(getData("LAYER_Mission.png"));
+			imageSet.add(getData("LAYER_Mission.png"));
 		//それ以外
 		} else {
 			//大破
 			if(ship.isBadlyDamage()){
 				state = "Badly";
-				imageArray.push(getData("LAYER_Badly.png"));
-				imageArray.push(getData("LAYER_BadlySmoke.png"));
+				imageSet.add(getData("LAYER_Badly.png"));
+				imageSet.add(getData("LAYER_BadlySmoke.png"));
 			//中破
 			} else if(ship.isHalfDamage()){
 				state = "Half";
-				imageArray.push(getData("LAYER_Half.png"));
-				imageArray.push(getData("LAYER_HalfSmoke.png"));
+				imageSet.add(getData("LAYER_Half.png"));
+				imageSet.add(getData("LAYER_HalfSmoke.png"));
 			//小破
 			} else if(ship.isSlightDamage()){
 				state = "Slight";
-				imageArray.push(getData("LAYER_Slight.png"));
-				imageArray.push(getData("LAYER_SlightSmoke.png"));
+				imageSet.add(getData("LAYER_Slight.png"));
+				imageSet.add(getData("LAYER_SlightSmoke.png"));
 			} else {
 				state = "Normal";
 			}
 		}
 
-		var cond = ship.getCond();
+		var cond = ship.cond;
 
 		//赤疲労
 		if(cond < 20){
 			_cond = "RedCond";
-			imageArray.push(getData("LAYER_RedCond.png"));
+			imageSet.add(getData("LAYER_RedCond.png"));
 		//橙疲労
 		} else if(cond < 30){
 			_cond = "OrangeCond";
-			imageArray.push(getData("LAYER_OrangeCond.png"));
+			imageSet.add(getData("LAYER_OrangeCond.png"));
 		//キラ
 		} else if(cond > 49){
 			_cond = "KiraCond";
-			imageArray.push(getData("LAYER_KiraCond.png"));
+			imageSet.add(getData("LAYER_KiraCond.png"));
 		} else {
 			_cond = "Normal";
 		}
@@ -291,36 +290,25 @@ function getImageDto(ship){
 		//ケッコンカッコカリ
 		if(ship.getLv() > 99){
 			wedding = "Wedding";
-			imageArray.push(getData("LAYER_Wedding.png"));
+			imageSet.add(getData("LAYER_Wedding.png"));
 		} else {
 			wedding = "Normal";
 		}
 	}
 	
-	return {hp:hp, state:state, cond:_cond, wedding:wedding, imageArray:imageArray};
+	return {hp:hp, state:state, cond:_cond, wedding:wedding, imageSet:imageSet};
 }
 
-function resize(imageArray,width,height){
+function resize(imageSet,width,height){
 	var scaled = new Image(Display.getDefault(), width, height);
 	var gc = new GC(scaled);
 	gc.setAntialias(SWT.ON);
 	gc.setInterpolation(SWT.HIGH);
-	for each(var image in imageArray){
+	imageSet.forEach(function(image){
 		gc.drawImage(image, 0, 0, image.getBounds().width, image.getBounds().height, 0, 0, width, height);
-	}
+	});
 	gc.dispose();
 	return scaled;
-}
-
-function getPreffix(fileName) {
-	if (fileName == null){
-		return null;
-	}
-	var point = fileName.lastIndexOf(".");
-	if (point != -1) {
-		return fileName.substring(0, point);
-	}
-	return fileName;
 }
 
 var ImageFilter = Java.extend(FilenameFilter,{
@@ -328,10 +316,7 @@ var ImageFilter = Java.extend(FilenameFilter,{
 		var index = name.lastIndexOf(".");
 		var ext = name.substring(index+1).toLowerCase();
 		//画像
-		if(ext.equals("jpg") || name.equals("jpeg") || name.endsWith("png")){
-			return true;
-		}
-		return false;
+		return ext.equals("jpg") || name.equals("jpeg") || name.endsWith("png");
 	}
 });
 
