@@ -1,4 +1,4 @@
-//ver1.4.5
+//ver1.5.0
 //Author: Nishisonic
 
 load("script/utils.js");

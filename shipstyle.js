@@ -1,4 +1,4 @@
-//ver1.4.5
+//ver1.5.0
 //Author: Nishisonic
 //        Nekopanda
 
@@ -24,6 +24,10 @@ HashMap = Java.type("java.util.HashMap");
 Arrays = Java.type("java.util.Arrays");
 Map = Java.type("java.util.Map");
 LinkedHashSet = Java.type("java.util.LinkedHashSet"); 
+URL = Java.type("java.net.URL");
+HttpURLConnection = Java.type("java.net.HttpURLConnection");
+Files = Java.type("java.nio.file.Files");
+Paths = Java.type("java.nio.file.Paths");
 
 GlobalContext = Java.type("logbook.data.context.GlobalContext");
 AppConstants = Java.type("logbook.constants.AppConstants");
@@ -47,6 +51,9 @@ var HEIGHT         = 20;
 var PREFIX         = "";
 var FS             = File.separator;
 var DIR            = "." + FS + "script" + FS + "shipImage" + FS;
+var lDir           = new File(DIR + "Layer");
+var nDir           = new File(DIR + "Normal");
+var dDir           = new File(DIR + "Damage");
 var tableImageDto  = null;
 var shipTable      = null;
 
@@ -59,9 +66,6 @@ var columnIndex = - 1;
 function begin(header) {
 	//startTime = System.currentTimeMillis();
 	if(!getData("isLoaded")){ //nullはfalse
-		var lDir = new File(DIR + "Layer");
-		var nDir = new File(DIR + "Normal");
-		var dDir = new File(DIR + "Damage");
 		//レイヤー
 		Arrays.stream(lDir.listFiles(new ImageFilter())).forEach(function(file){
 			setTmpData("LAYER_" + file.getName(),getImage(file.toString()));
@@ -222,11 +226,11 @@ function getImageDto(ship){
 		//通常
 		if(!ship.isHalfDamage()){
 			hp = "Normal";
-			return getData("NORMAL_" + ship.shipId.toString() + ".jpg");
+			return getData("NORMAL_" + ship.shipId.toString() + ".jpg") instanceof Image ? getData("NORMAL_" + ship.shipId.toString() + ".jpg") : getWebImage(ship.shipId.toString(), false);
 		//中破以上
 		} else {
 			hp = "Damage";
-			return getData("DAMAGE_" + ship.shipId.toString() + ".jpg");
+			return getData("DAMAGE_" + ship.shipId.toString() + ".jpg") instanceof Image ? getData("DAMAGE_" + ship.shipId.toString() + ".jpg") : getWebImage(ship.shipId.toString(), true);
 		}
 	})(ship);
 	var imageSet = new LinkedHashSet();
@@ -326,4 +330,34 @@ function getImage(path){
 
 function isEqual(dto,dto2){
 	return dto.hp == dto2.hp && dto.state == dto2.state && dto.cond == dto2.cond && dto.wedding == dto2.wedding;
+}
+
+function getWebImage(shipId,isDamaged){
+	// githubに接続
+	print("SHIP ID:" + shipId + "のデータを取得します...");
+	try{
+		var url = new URL("https://raw.githubusercontent.com/Nishisonic/AddShipImage/master/shipImage/" + (isDamaged ? "Damage" : "Normal") + "/" + shipId + ".jpg");
+		print("接続先:" + url.toString());
+		var urlConnection= HttpURLConnection.class.cast(url.openConnection());
+		urlConnection.connect();
+		print("HTTP Status Code:" + urlConnection.getResponseCode());
+		if(urlConnection.getResponseCode() == HttpURLConnection.HTTP_OK){
+			var file = Paths.get((isDamaged ? dDir.toString() : nDir.toString()) + FS + shipId + ".jpg");
+			//元からファイルが無い前提なので上書き設定は無し
+			Files.copy(urlConnection.getInputStream(), file);
+			print("画像の取得が完了しました");
+			setTmpData((isDamaged ? "DAMAGE_" : "NORMAL_") + shipId + ".jpg", getImage(file.toString()));
+			return getData((isDamaged ? "DAMAGE_" : "NORMAL_") + shipId + ".jpg");
+		} else {
+			print("画像の取得に失敗しました");
+			if(urlConnection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND){
+				print("作者の怠慢によってファイルが置かれていません…作者に問い合わせてください");
+			} else {
+				print("想定外のエラーです");
+			}
+		}
+	} catch(e) {
+		e.printStackTrace();
+	}
+	return null;
 }
