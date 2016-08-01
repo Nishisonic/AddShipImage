@@ -1,4 +1,4 @@
-//ver1.5.0
+//ver1.5.1
 //Author: Nishisonic
 //        Nekopanda
 
@@ -149,6 +149,11 @@ function create(table, data, index) {
 		}).forEach(function(shiptable){
 			shipTable = shiptable;
 		});
+		//お風呂に入りたい艦娘
+		var bathWaterTableDialog = ApplicationMain.main.getBathwaterTableDialog();
+		if(bathWaterTableDialog.shell == table.shell){
+			shipTable = bathWaterTableDialog;
+		}
 		//前回保存したimageのマップのマップ
 		var storedTableImageDto = getData(shipTable);
 		tableImageDto = storedTableImageDto instanceof Map ? storedTableImageDto : new HashMap();
