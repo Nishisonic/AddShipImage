@@ -1,4 +1,4 @@
-//ver1.5.1
+//ver1.5.2
 //Author: Nishisonic
 //        Nekopanda
 
@@ -39,7 +39,6 @@ ApplicationMain = Java.type("logbook.gui.ApplicationMain");
 data_prefix = "shipImage_";
 
 //var startTime;
-//var endTime;
 
 //画像処理に使う変数類
 var oldImageDtoMap = null;
@@ -222,6 +221,7 @@ function end() {
 
 
 function getImageDto(ship){
+	var shipId = ship.shipId; //艦ID
 	var hp;
 	var state;
 	var _cond;
@@ -305,7 +305,7 @@ function getImageDto(ship){
 		}
 	}
 	
-	return {hp:hp, state:state, cond:_cond, wedding:wedding, imageSet:imageSet};
+	return {shipId:shipId, hp:hp, state:state, cond:_cond, wedding:wedding, imageSet:imageSet};
 }
 
 function resize(imageSet,width,height){
@@ -334,7 +334,7 @@ function getImage(path){
 }
 
 function isEqual(dto,dto2){
-	return dto.hp == dto2.hp && dto.state == dto2.state && dto.cond == dto2.cond && dto.wedding == dto2.wedding;
+	return dto.shipId == dto2.shipId && dto.hp == dto2.hp && dto.state == dto2.state && dto.cond == dto2.cond && dto.wedding == dto2.wedding;
 }
 
 function getWebImage(shipId,isDamaged){
